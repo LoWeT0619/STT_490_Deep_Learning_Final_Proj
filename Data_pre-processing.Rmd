@@ -1,0 +1,600 @@
+---
+title: "scRNA-seq"
+author: "Wenting Liu"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. Packages and libraries: 
+1.1 Install "Seurat": which is one of the most popular tools for analysing scRNA-seq
+```{r}
+# install.packages('Seurat')
+```
+
+1.2 Libraries: 
+```{r}
+library(dplyr)
+library(Seurat)
+library(patchwork)
+```
+
+
+
+2. Load the datasets: there are 18 samples (10 cases with mutant IDH1 and 8 controls with wild type IDH1) in total.
+a. Cases with mutant IDH1:
+```{r}
+# Load the cases dataset
+m_3_18_1.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_18_1/")
+
+m_3_18_2.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_18_2/")
+
+m_3_20_1.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_20_1/")
+
+m_3_20_2.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_20_2/")
+
+m_4_30_1.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_4_30_1/")
+
+m_4_30_2.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_4_30_2/")
+
+m_7_16_1.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_1/")
+
+m_7_16_2.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_2/")
+
+m_7_16_3.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_3/")
+
+m_7_16_4.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_4/")
+```
+
+```{r}
+# Initialize the Seurat object with the raw (non-normalized data).
+m_3_18_1 <- CreateSeuratObject(counts = m_3_18_1.data$`Gene Expression`, project = "m_3_18_1", min.cells = 3, min.features = 200)
+
+m_3_18_2 <- CreateSeuratObject(counts = m_3_18_2.data$`Gene Expression`, project = "m_3_18_2", min.cells = 3, min.features = 200)
+
+m_3_20_1 <- CreateSeuratObject(counts = m_3_20_1.data$`Gene Expression`, project = "m_3_20_1", min.cells = 3, min.features = 200)
+
+m_3_20_2 <- CreateSeuratObject(counts = m_3_20_2.data$`Gene Expression`, project = "m_3_20_2", min.cells = 3, min.features = 200)
+
+m_4_30_1 <- CreateSeuratObject(counts = m_4_30_1.data$`Gene Expression`, project = "m_4_30_1", min.cells = 3, min.features = 200)
+
+m_4_30_2 <- CreateSeuratObject(counts = m_4_30_2.data$`Gene Expression`, project = "m_4_30_2", min.cells = 3, min.features = 200)
+
+m_7_16_1 <- CreateSeuratObject(counts = m_7_16_1.data, project = "m_7_16_1", min.cells = 3, min.features = 200)
+
+m_7_16_2 <- CreateSeuratObject(counts = m_7_16_2.data, project = "m_7_16_2", min.cells = 3, min.features = 200)
+
+m_7_16_3 <- CreateSeuratObject(counts = m_7_16_3.data, project = "m_7_16_3", min.cells = 3, min.features = 200)
+
+m_7_16_4 <- CreateSeuratObject(counts = m_7_16_4.data, project = "m_7_16_4", min.cells = 3, min.features = 200)
+```
+
+b. Controls with wild type IDH1:
+```{r}
+# Load the controls dataset
+wt_3_07_1.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_3_07_1/")
+
+wt_3_07_2.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_3_07_2/")
+
+wt_6_27_1.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_6_27_1/")
+
+wt_6_27_2.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_6_27_2/")
+
+wt_7_12_1.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_1/")
+
+wt_7_12_2.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_2/")
+
+wt_7_12_3.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_3/")
+
+wt_7_12_4.data <- Read10X(data.dir = "/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_4/")
+```
+
+```{r}
+# Initialize the Seurat object with the raw (non-normalized data).
+wt_3_07_1 <- CreateSeuratObject(counts = wt_3_07_1.data$`Gene Expression`, project = "wt_3_07_1", min.cells = 3, min.features = 200)
+
+wt_3_07_2 <- CreateSeuratObject(counts = wt_3_07_2.data$`Gene Expression`, project = "wt_3_07_2", min.cells = 3, min.features = 200)
+
+wt_6_27_1 <- CreateSeuratObject(counts = wt_6_27_1.data, project = "wt_6_27_1", min.cells = 3, min.features = 200)
+
+wt_6_27_2 <- CreateSeuratObject(counts = wt_6_27_2.data, project = "wt_6_27_2", min.cells = 3, min.features = 200)
+
+wt_7_12_1 <- CreateSeuratObject(counts = wt_7_12_1.data, project = "wt_7_12_1", min.cells = 3, min.features = 200)
+
+wt_7_12_2 <- CreateSeuratObject(counts = wt_7_12_2.data, project = "wt_7_12_2", min.cells = 3, min.features = 200)
+
+wt_7_12_3 <- CreateSeuratObject(counts = wt_7_12_3.data, project = "wt_7_12_3", min.cells = 3, min.features = 200)
+
+wt_7_12_4 <- CreateSeuratObject(counts = wt_7_12_4.data, project = "wt_7_12_4", min.cells = 3, min.features = 200)
+```
+
+
+
+3. Data pre-processing: follow the Standard pre-processing workflow from Seurat.
+3.1 QC and selecting cells for further analysis
+a. Case
+```{r}
+# The [[ operator can add columns to object metadata. This is a great place to stash QC stats
+m_3_18_1[["percent.mt"]] <- PercentageFeatureSet(m_3_18_1, pattern = "^MT-")
+m_3_18_2[["percent.mt"]] <- PercentageFeatureSet(m_3_18_2, pattern = "^MT-")
+m_3_20_1[["percent.mt"]] <- PercentageFeatureSet(m_3_20_1, pattern = "^MT-")
+m_3_20_2[["percent.mt"]] <- PercentageFeatureSet(m_3_20_2, pattern = "^MT-")
+m_4_30_1[["percent.mt"]] <- PercentageFeatureSet(m_4_30_1, pattern = "^MT-")
+m_4_30_2[["percent.mt"]] <- PercentageFeatureSet(m_4_30_2, pattern = "^MT-")
+m_7_16_1[["percent.mt"]] <- PercentageFeatureSet(m_7_16_1, pattern = "^MT-")
+m_7_16_2[["percent.mt"]] <- PercentageFeatureSet(m_7_16_2, pattern = "^MT-")
+m_7_16_3[["percent.mt"]] <- PercentageFeatureSet(m_7_16_3, pattern = "^MT-")
+m_7_16_4[["percent.mt"]] <- PercentageFeatureSet(m_7_16_4, pattern = "^MT-")
+
+# Show QC metrics for the first 6 cells
+head(m_7_16_4@meta.data, 6)
+```
+
+```{r}
+# Visualize QC metrics as a violin plot
+VlnPlot(m_7_16_4, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+```
+
+```{r}
+# FeatureScatter is typically used to visualize feature-feature relationships, but can be used for anything calculated by the object, i.e. columns in object metadata, PC scores etc.
+plot1 <- FeatureScatter(m_7_16_4, feature1 = "nCount_RNA", feature2 = "percent.mt")
+plot2 <- FeatureScatter(m_7_16_4, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot1 + plot2
+```
+
+```{r}
+m_3_18_1 <- subset(m_3_18_1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_3_18_2 <- subset(m_3_18_2, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_3_20_1 <- subset(m_3_20_1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_3_20_2 <- subset(m_3_20_2, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_4_30_1 <- subset(m_4_30_1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_4_30_2 <- subset(m_4_30_2, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_7_16_1 <- subset(m_7_16_1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_7_16_2 <- subset(m_7_16_2, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_7_16_3 <- subset(m_7_16_3, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+m_7_16_4 <- subset(m_7_16_4, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+```
+
+b. Control
+```{r}
+# The [[ operator can add columns to object metadata. This is a great place to stash QC stats
+wt_3_07_1[["percent.mt"]] <- PercentageFeatureSet(wt_3_07_1, pattern = "^MT-")
+wt_3_07_2[["percent.mt"]] <- PercentageFeatureSet(wt_3_07_2, pattern = "^MT-")
+wt_6_27_1[["percent.mt"]] <- PercentageFeatureSet(wt_6_27_1, pattern = "^MT-")
+wt_6_27_2[["percent.mt"]] <- PercentageFeatureSet(wt_6_27_2, pattern = "^MT-")
+wt_7_12_1[["percent.mt"]] <- PercentageFeatureSet(wt_7_12_1, pattern = "^MT-")
+wt_7_12_2[["percent.mt"]] <- PercentageFeatureSet(wt_7_12_2, pattern = "^MT-")
+wt_7_12_3[["percent.mt"]] <- PercentageFeatureSet(wt_7_12_3, pattern = "^MT-")
+wt_7_12_4[["percent.mt"]] <- PercentageFeatureSet(wt_7_12_4, pattern = "^MT-")
+
+# Show QC metrics for the first 6 cells
+head(wt_7_12_4@meta.data, 6)
+```
+
+```{r}
+# Visualize QC metrics as a violin plot
+VlnPlot(wt_7_12_4, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+```
+
+```{r}
+# FeatureScatter is typically used to visualize feature-feature relationships, but can be used for anything calculated by the object, i.e. columns in object metadata, PC scores etc.
+plot1 <- FeatureScatter(wt_7_12_4, feature1 = "nCount_RNA", feature2 = "percent.mt")
+plot2 <- FeatureScatter(wt_7_12_4, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot1 + plot2
+```
+
+```{r}
+wt_3_07_1 <- subset(wt_3_07_1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+wt_3_07_2 <- subset(wt_3_07_2, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+wt_6_27_1 <- subset(wt_6_27_1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+wt_6_27_2 <- subset(wt_6_27_2, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+wt_7_12_1 <- subset(wt_7_12_1, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+wt_7_12_2 <- subset(wt_7_12_2, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+wt_7_12_3 <- subset(wt_7_12_3, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+wt_7_12_4 <- subset(wt_7_12_4, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+```
+
+3.2 Normalizing the data
+a. Case
+```{r}
+m_3_18_1 <- NormalizeData(m_3_18_1, normalization.method = "LogNormalize", scale.factor = 10000)
+m_3_18_2 <- NormalizeData(m_3_18_2, normalization.method = "LogNormalize", scale.factor = 10000)
+m_3_20_1 <- NormalizeData(m_3_20_1, normalization.method = "LogNormalize", scale.factor = 10000)
+m_3_20_2 <- NormalizeData(m_3_20_2, normalization.method = "LogNormalize", scale.factor = 10000)
+m_4_30_1 <- NormalizeData(m_4_30_1, normalization.method = "LogNormalize", scale.factor = 10000)
+m_4_30_2 <- NormalizeData(m_4_30_2, normalization.method = "LogNormalize", scale.factor = 10000)
+m_7_16_1 <- NormalizeData(m_7_16_1, normalization.method = "LogNormalize", scale.factor = 10000)
+m_7_16_2 <- NormalizeData(m_7_16_2, normalization.method = "LogNormalize", scale.factor = 10000)
+m_7_16_3 <- NormalizeData(m_7_16_3, normalization.method = "LogNormalize", scale.factor = 10000)
+m_7_16_4 <- NormalizeData(m_7_16_4, normalization.method = "LogNormalize", scale.factor = 10000)
+```
+
+b. Control
+```{r}
+wt_3_07_1 <- NormalizeData(wt_3_07_1, normalization.method = "LogNormalize", scale.factor = 10000)
+wt_3_07_2 <- NormalizeData(wt_3_07_2, normalization.method = "LogNormalize", scale.factor = 10000)
+wt_6_27_1 <- NormalizeData(wt_6_27_1, normalization.method = "LogNormalize", scale.factor = 10000)
+wt_6_27_2 <- NormalizeData(wt_6_27_2, normalization.method = "LogNormalize", scale.factor = 10000)
+wt_7_12_1 <- NormalizeData(wt_7_12_1, normalization.method = "LogNormalize", scale.factor = 10000)
+wt_7_12_2 <- NormalizeData(wt_7_12_2, normalization.method = "LogNormalize", scale.factor = 10000)
+wt_7_12_3 <- NormalizeData(wt_7_12_3, normalization.method = "LogNormalize", scale.factor = 10000)
+wt_7_12_4 <- NormalizeData(wt_7_12_4, normalization.method = "LogNormalize", scale.factor = 10000)
+```
+
+3.3. Identification of highly variable features (feature selection)
+a. Case
+```{r}
+m_3_18_1 <- FindVariableFeatures(m_3_18_1, selection.method = "vst", nfeatures = 2000)
+m_3_18_2 <- FindVariableFeatures(m_3_18_2, selection.method = "vst", nfeatures = 2000)
+m_3_20_1 <- FindVariableFeatures(m_3_20_1, selection.method = "vst", nfeatures = 2000)
+m_3_20_2 <- FindVariableFeatures(m_3_20_2, selection.method = "vst", nfeatures = 2000)
+m_4_30_1 <- FindVariableFeatures(m_4_30_1, selection.method = "vst", nfeatures = 2000)
+m_4_30_2 <- FindVariableFeatures(m_4_30_2, selection.method = "vst", nfeatures = 2000)
+m_7_16_1 <- FindVariableFeatures(m_7_16_1, selection.method = "vst", nfeatures = 2000)
+m_7_16_2 <- FindVariableFeatures(m_7_16_2, selection.method = "vst", nfeatures = 2000)
+m_7_16_3 <- FindVariableFeatures(m_7_16_3, selection.method = "vst", nfeatures = 2000)
+m_7_16_1 <- FindVariableFeatures(m_7_16_4, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(m_7_16_1), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(m_7_16_1)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1 + plot2
+```
+
+b. Control
+```{r}
+wt_3_07_1 <- FindVariableFeatures(wt_3_07_1, selection.method = "vst", nfeatures = 2000)
+wt_3_07_2 <- FindVariableFeatures(wt_3_07_2, selection.method = "vst", nfeatures = 2000)
+wt_6_27_1 <- FindVariableFeatures(wt_6_27_1, selection.method = "vst", nfeatures = 2000)
+wt_6_27_2 <- FindVariableFeatures(wt_6_27_2, selection.method = "vst", nfeatures = 2000)
+wt_7_12_1 <- FindVariableFeatures(wt_7_12_1, selection.method = "vst", nfeatures = 2000)
+wt_7_12_2 <- FindVariableFeatures(wt_7_12_2, selection.method = "vst", nfeatures = 2000)
+wt_7_12_3 <- FindVariableFeatures(wt_7_12_3, selection.method = "vst", nfeatures = 2000)
+wt_7_12_4 <- FindVariableFeatures(wt_7_12_4, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(wt_7_12_4), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(wt_7_12_4)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1 + plot2
+```
+
+3.4 Scaling the data
+a. Case
+```{r}
+m_3_18_1.genes <- rownames(m_3_18_1)
+m_3_18_1 <- ScaleData(m_3_18_1, features = m_3_18_1.genes)
+saveRDS(m_3_18_1, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_18_1.rds")
+
+m_3_18_2.genes <- rownames(m_3_18_2)
+m_3_18_2 <- ScaleData(m_3_18_2, features = m_3_18_2.genes)
+saveRDS(m_3_18_2, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_18_2.rds")
+
+m_3_20_1.genes <- rownames(m_3_20_1)
+m_3_20_1 <- ScaleData(m_3_20_1, features = m_3_20_1.genes)
+saveRDS(m_3_20_1, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_20_1.rds")
+
+m_3_20_2.genes <- rownames(m_3_20_2)
+m_3_20_2 <- ScaleData(m_3_20_2, features = m_3_20_2.genes)
+saveRDS(m_3_20_2, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_20_2.rds")
+
+m_4_30_1.genes <- rownames(m_4_30_1)
+m_4_30_1 <- ScaleData(m_4_30_1, features = m_4_30_1.genes)
+saveRDS(m_4_30_1, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_4_30_1.rds")
+
+m_4_30_2.genes <- rownames(m_4_30_2)
+m_4_30_2 <- ScaleData(m_4_30_2, features = m_4_30_2.genes)
+saveRDS(m_4_30_2, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_4_30_2.rds")
+
+m_7_16_1.genes <- rownames(m_7_16_1)
+m_7_16_1 <- ScaleData(m_7_16_1, features = m_7_16_1.genes)
+saveRDS(m_7_16_1, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_1.rds")
+
+m_7_16_2.genes <- rownames(m_7_16_2)
+m_7_16_2 <- ScaleData(m_7_16_2, features = m_7_16_2.genes)
+saveRDS(m_7_16_2, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_2.rds")
+
+m_7_16_3.genes <- rownames(m_7_16_3)
+m_7_16_3 <- ScaleData(m_7_16_3, features = m_7_16_3.genes)
+saveRDS(m_7_16_3, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_3.rds")
+
+m_7_16_4.genes <- rownames(m_7_16_4)
+m_7_16_4 <- ScaleData(m_7_16_4, features = m_7_16_4.genes)
+saveRDS(m_7_16_4, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_4.rds")
+```
+
+b. Control
+```{r}
+wt_3_07_1.genes <- rownames(wt_3_07_1)
+wt_3_07_1 <- ScaleData(wt_3_07_1, features = wt_3_07_1.genes)
+saveRDS(wt_3_07_1, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_3_07_1.rds")
+
+wt_3_07_2.genes <- rownames(wt_3_07_2)
+wt_3_07_2 <- ScaleData(wt_3_07_2, features = wt_3_07_2.genes)
+saveRDS(wt_3_07_2, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_3_07_2.rds")
+
+wt_6_27_1.genes <- rownames(wt_6_27_1)
+wt_6_27_1 <- ScaleData(wt_6_27_1, features = wt_6_27_1.genes)
+saveRDS(wt_6_27_1, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_6_27_1.rds")
+
+wt_6_27_2.genes <- rownames(wt_6_27_2)
+wt_6_27_2 <- ScaleData(wt_6_27_2, features = wt_6_27_2.genes)
+saveRDS(wt_6_27_2, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_6_27_2.rds")
+
+wt_7_12_1.genes <- rownames(wt_7_12_1)
+wt_7_12_1 <- ScaleData(wt_7_12_1, features = wt_7_12_1.genes)
+saveRDS(wt_7_12_1, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_1.rds")
+
+wt_7_12_2.genes <- rownames(wt_7_12_2)
+wt_7_12_2 <- ScaleData(wt_7_12_2, features = wt_7_12_2.genes)
+saveRDS(wt_7_12_2, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_2.rds")
+
+wt_7_12_3.genes <- rownames(wt_7_12_3)
+wt_7_12_3 <- ScaleData(wt_7_12_3, features = wt_7_12_3.genes)
+saveRDS(wt_7_12_3, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_3.rds")
+
+wt_7_12_4.genes <- rownames(wt_7_12_4)
+wt_7_12_4 <- ScaleData(wt_7_12_4, features = wt_7_12_4.genes)
+saveRDS(wt_7_12_4, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_4.rds")
+```
+
+4. Perform linear dimensional reduction
+a. Case
+```{r}
+m_7_16_3 <- RunPCA(m_7_16_3, features = VariableFeatures(object = m_7_16_3))
+```
+
+```{r}
+DimPlot(m_7_16_3, reduction = "pca")
+```
+
+b. Control
+```{r}
+wt_7_12_4 <- RunPCA(wt_7_12_4, features = VariableFeatures(object = wt_7_12_4))
+```
+
+```{r}
+DimPlot(wt_7_12_4, reduction = "pca")
+```
+
+
+
+5. Determine the ‘dimensionality’ of the dataset
+a. Case
+```{r}
+# NOTE: This process can take a long time for big datasets, comment out for expediency. More approximate techniques such as those implemented in ElbowPlot() can be used to reduce computation time
+m_7_16_3 <- JackStraw(m_7_16_3, num.replicate = 100)
+m_7_16_3 <- ScoreJackStraw(m_7_16_3, dims = 1:20)
+```
+
+```{r}
+JackStrawPlot(m_7_16_3, dims = 1:20)
+```
+
+```{r}
+ElbowPlot(m_7_16_3)
+```
+
+b. Control
+```{r}
+# NOTE: This process can take a long time for big datasets, comment out for expediency. More approximate techniques such as those implemented in ElbowPlot() can be used to reduce computation time
+wt_7_12_4 <- JackStraw(wt_7_12_4, num.replicate = 100)
+wt_7_12_4 <- ScoreJackStraw(wt_7_12_4, dims = 1:20)
+```
+
+```{r}
+JackStrawPlot(wt_7_12_4, dims = 1:20)
+```
+
+```{r}
+ElbowPlot(wt_7_12_4)
+```
+
+
+
+6. Cluster the cells
+a. Case
+```{r}
+m_7_16_3 <- FindNeighbors(m_7_16_3, dims = 1:20)
+m_7_16_3 <- FindClusters(m_7_16_3, resolution = 0.5)
+```
+
+b. Control
+```{r}
+wt_7_12_4 <- FindNeighbors(wt_7_12_4, dims = 1:20)
+wt_7_12_4 <- FindClusters(wt_7_12_4, resolution = 0.5)
+```
+
+7. Run non-linear dimensional reduction (UMAP/tSNE)
+a. Case
+```{r}
+# If you haven't installed UMAP, you can do so via reticulate::py_install(packages = 'umap-learn')
+m_7_16_3 <- RunUMAP(m_7_16_3, dims = 1:20)
+```
+
+```{r}
+# note that you can set `label = TRUE` or use the LabelClusters function to help label individual clusters
+DimPlot(m_7_16_3, reduction = "umap")
+```
+
+b. Control
+```{r}
+# If you haven't installed UMAP, you can do so via reticulate::py_install(packages = 'umap-learn')
+wt_7_12_4 <- RunUMAP(wt_7_12_4, dims = 1:20)
+```
+
+```{r}
+# note that you can set `label = TRUE` or use the LabelClusters function to help label individual clusters
+DimPlot(wt_7_12_4, reduction = "umap")
+```
+
+
+
+DATASETS INTEGRATION:
+
+1. Libraries:
+```{r}
+library(Seurat)
+library(dplyr)
+library(patchwork)
+```
+
+2. Data:
+```{r}
+# 10 Cases:
+m_3_18_1 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_18_1.rds")
+m_3_18_2 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_18_2.rds")
+m_3_20_1 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_20_1.rds")
+m_3_20_2 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_3_20_2.rds")
+m_4_30_1 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_4_30_1.rds")
+m_4_30_2 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_4_30_2.rds")
+m_7_16_1 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_1.rds")
+m_7_16_2 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_2.rds")
+m_7_16_3 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_3.rds")
+m_7_16_4 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/m_7_16_4.rds")
+
+# 8 Controls
+wt_3_07_1 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_3_07_1.rds")
+wt_3_07_2 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_3_07_2.rds")
+wt_6_27_1 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_6_27_1.rds")
+wt_6_27_2 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_6_27_2.rds")
+wt_7_12_1 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_1.rds")
+wt_7_12_2 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_2.rds")
+wt_7_12_3 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_3.rds")
+wt_7_12_4 <- readRDS("/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/wt_7_12_4.rds")
+```
+
+3. Perform integration
+a. Cases:
+```{r}
+case_objs <- list(case1 = m_3_18_1, case2 = m_3_18_2, case3 = m_3_20_1, case4 = m_3_20_2, case5 = m_4_30_1,
+                  case6 = m_4_30_2, case7 = m_7_16_1, case8 = m_7_16_2, case9 = m_7_16_3, case10 = m_7_16_4)
+
+case_features <- SelectIntegrationFeatures(object.list = case_objs)
+case_anchors <- FindIntegrationAnchors(object.list = case_objs, anchor.features = case_features)
+cases <- IntegrateData(anchorset = case_anchors, k.weight = 30)
+```
+
+b. Controls: eliminate wt_3_07_2.
+```{r}
+control_objs <- list(control1 = wt_3_07_1, control3 = wt_6_27_1, control4 = wt_6_27_2, 
+                     control5 = wt_7_12_1, control6 = wt_7_12_2, control7 = wt_7_12_3, control8 = wt_7_12_4)
+
+control_features <- SelectIntegrationFeatures(object.list = control_objs)
+control_anchors <- FindIntegrationAnchors(object.list = control_objs, anchor.features = control_features)
+controls <- IntegrateData(anchorset = control_anchors, k.weight = 30)
+```
+
+4. Perform an integrated analysis
+a. Cases:
+```{r}
+# specify that we will perform downstream analysis on the corrected data note that the original unmodified data still resides in the 'RNA' assay
+DefaultAssay(cases) <- "integrated"
+
+# Run the standard workflow for visualization and clustering
+cases <- ScaleData(cases, verbose = FALSE)
+cases <- RunPCA(cases, npcs = 30, verbose = FALSE)
+cases <- RunUMAP(cases, reduction = "pca", dims = 1:30)
+cases <- FindNeighbors(cases, reduction = "pca", dims = 1:30)
+cases <- FindClusters(cases, resolution = 0.5)
+
+saveRDS(cases, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/cases.rds")
+```
+
+```{r}
+# # Install the SeuratDisk package
+# if (!requireNamespace("remotes", quietly = TRUE)) {
+#   install.packages("remotes")
+# }
+# remotes::install_github("mojaveazure/seurat-disk")
+
+setwd('/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data')
+
+# save the Seurat object as an h5Seurat file
+library(Seurat)
+library(SeuratData)
+library(SeuratDisk)
+
+SaveH5Seurat(cases, filename = "cases.h5Seurat")
+Convert("cases.h5Seurat", dest = "h5ad")
+```
+
+```{r}
+# Visualization
+p <- DimPlot(cases, reduction = "umap", label = TRUE, repel = TRUE)
+p
+```
+
+b. Controls:
+```{r}
+# specify that we will perform downstream analysis on the corrected data note that the original unmodified data still resides in the 'RNA' assay
+DefaultAssay(controls) <- "integrated"
+
+# Run the standard workflow for visualization and clustering
+controls <- ScaleData(controls, verbose = FALSE)
+controls <- RunPCA(controls, npcs = 30, verbose = FALSE)
+controls <- RunUMAP(controls, reduction = "pca", dims = 1:30)
+controls <- FindNeighbors(controls, reduction = "pca", dims = 1:30)
+controls <- FindClusters(controls, resolution = 0.5)
+
+saveRDS(controls, file="/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data/controls.rds")
+```
+
+```{r}
+# # Install the SeuratDisk package
+# if (!requireNamespace("remotes", quietly = TRUE)) {
+#   install.packages("remotes")
+# }
+# remotes::install_github("mojaveazure/seurat-disk")
+
+setwd('/Users/lowet/Documents/000-Files/02-study/01-University/04-MSU/2023 Summer/01-STT_490/04-Project/02-Data')
+
+# save the Seurat object as an h5Seurat file
+library(Seurat)
+library(SeuratData)
+library(SeuratDisk)
+
+SaveH5Seurat(controls, filename = "controls.h5Seurat")
+Convert("controls.h5Seurat", dest = "h5ad")
+```
+
+```{r}
+# Visualization
+p <- DimPlot(controls, reduction = "umap", label = TRUE, repel = TRUE)
+p
+```
+
+5. Identify conserved cell type markers
+```{r}
+# install.packages('BiocManager')
+# BiocManager::install('multtest')
+# install.packages('metap')
+```
+
+a. Cases:
+```{r}
+cases_y <- read.csv(file='../02-Data/Cases/cases_y.csv', header=T)
+
+table(cases_y$seurat_clusters)
+```
+
+b. Controls:
+```{r}
+controls_y <- read.csv(file='../02-Data/Controls/controls_y.csv', header=T)
+
+table(controls_y$seurat_clusters)
+```
+
+
+
+
+
+
